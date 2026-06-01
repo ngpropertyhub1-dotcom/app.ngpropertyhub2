@@ -10,9 +10,20 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "security:check-inquiry-rls": "node scripts/security/check-inquiry-rls.mjs"
+    "security:check-inquiry-rls": "node scripts/security/check-inquiry-rls.mjs",
+    "cap:init": "cap init",
+    "cap:add:android": "cap add android",
+    "cap:sync": "cap sync",
+    "cap:open:android": "cap open android",
+    "cap:build:android": "cap build android",
+    "android:build": "bun run build && bun run cap:sync && bun run cap:build:android"
   },
   "dependencies": {
+    "@capacitor/app": "^6.0.0",
+    "@capacitor/camera": "^6.0.0",
+    "@capacitor/core": "^6.0.0",
+    "@capacitor/geolocation": "^6.0.0",
+    "@capacitor/storage": "^6.0.0",
     "@cloudflare/vite-plugin": "^1.25.5",
     "@hookform/resolvers": "^5.2.2",
     "@lovable.dev/cloud-auth-js": "^1.1.2",
@@ -76,6 +87,7 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@capacitor/cli": "^6.0.0",
     "@eslint/js": "^9.32.0",
     "@lovable.dev/vite-tanstack-config": "^1.7.0",
     "@types/google.maps": "^3.64.1",
