@@ -1,0 +1,96 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: Setup Java
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+        cache: gradle
+
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+      with:
+        api-level: 33
+        build-tools-version: '34.0.0'
+
+    - name: Accept Android licenses
+      run: |
+        echo "Accepting Android SDK licenses..."
+        yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_HOME --licenses || true
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Build web assets
+      run: npm run build
+      env:
+        CI: true
+
+    - name: Add Android platform
+      run: npx cap add android
+      continue-on-error: true
+
+    - name: Sync Capacitor
+      run: npx cap sync android
+
+    - name: Build Gradle
+      working-directory: ./android
+      run: ./gradlew build
+      env:
+        ORG_GRADLE_PROJECT_org_gradle_java_home: ${{ env.JAVA_HOME }}
+
+    - name: Build Release APK
+      working-directory: ./android
+      run: ./gradlew assembleRelease
+      env:
+        ORG_GRADLE_PROJECT_org_gradle_java_home: ${{ env.JAVA_HOME }}
+
+    - name: Upload APK as Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: property-hub-apk
+        path: ./android/app/build/outputs/apk/release/app-release*.apk
+        retention-days: 30
+
+    - name: Upload Debug APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: property-hub-debug-apk
+        path: ./android/app/build/outputs/apk/debug/app-debug.apk
+        retention-days: 7
+
+    - name: Create Release
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: release-${{ github.run_number }}
+        release_name: Build #${{ github.run_number }}
+        body: |
+          Property Hub USA - Android APK Release
+          Build Number: ${{ github.run_number }}
+          Commit: ${{ github.sha }}
+        draft: false
+        prerelease: false
